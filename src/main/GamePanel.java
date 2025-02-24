@@ -6,16 +6,16 @@ import java.awt.image.BufferedImage;
 
 public class GamePanel extends JPanel implements Runnable {
 
-    // --- Logical game resolution (game logic remains based on these values) ---
-    final int originalTileSize = 16;               // Base tile size in pixels
-    final int scale = 3;                           // Logical scale factor
-    final int tileSize = originalTileSize * scale;   // Effective tile size in logical resolution
-    final int maxScreenCol = 16;                   // Number of columns
-    final int maxScreenRow = 12;                   // Number of rows
-    final int gameWidth = tileSize * maxScreenCol;   // Logical game width
-    final int gameHeight = tileSize * maxScreenRow;  // Logical game height
+    // --- Fixed logical grid settings ---
+    final int originalTileSize = 16;             // Base tile size in pixels
+    final int scale = 3;                         // Scale factor for logical resolution
+    final int tileSize = originalTileSize * scale; // Effective tile size (e.g., 48 pixels)
+    final int maxScreenCol = 16;                 // Fixed number of columns
+    final int maxScreenRow = 12;                 // Fixed number of rows
+    final int gameWidth = tileSize * maxScreenCol; // Logical game width (e.g., 768)
+    final int gameHeight = tileSize * maxScreenRow; // Logical game height (e.g., 576)
 
-    // --- FPS setting ---
+    // --- FPS ---
     final int FPS = 60;
 
     // --- Input handler ---
@@ -29,8 +29,7 @@ public class GamePanel extends JPanel implements Runnable {
     final int playerSize = 48;
 
     public GamePanel() {
-        // We no longer fix the panel size so the container can scale it (e.g., in full-screen mode).
-        // If needed, you can still set a preferred size, but it won't restrict resizing:
+        // Set preferred size for initial layout based on logical resolution.
         this.setPreferredSize(new Dimension(gameWidth, gameHeight));
         this.setBackground(Color.black);
         this.setDoubleBuffered(true);
@@ -69,8 +68,9 @@ public class GamePanel extends JPanel implements Runnable {
         }
     }
 
+    // Update game logic using fixed logical resolution boundaries.
     public void update() {
-        // Update the player's position based on keyboard input (logical resolution).
+        // Keep the player within the fixed grid boundaries.
         if (inputHandler.upPressed && playerY > 0) {
             playerY -= playerSpeed;
         }
@@ -89,16 +89,16 @@ public class GamePanel extends JPanel implements Runnable {
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
 
-        // Create an offscreen image at the logical resolution.
+        // Create an offscreen image at the fixed logical resolution.
         BufferedImage gameImage = new BufferedImage(gameWidth, gameHeight, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2dGame = gameImage.createGraphics();
 
-        // --- Render the game scene at the logical resolution ---
-        // Fill a dark gray background.
+        // --- Render the game scene at logical resolution ---
+        // Fill the background.
         g2dGame.setColor(Color.darkGray);
         g2dGame.fillRect(0, 0, gameWidth, gameHeight);
 
-        // Optionally, draw grid lines to visualize tiles.
+        // Draw grid lines.
         g2dGame.setColor(Color.gray);
         for (int col = 0; col <= maxScreenCol; col++) {
             int x = col * tileSize;
@@ -109,27 +109,25 @@ public class GamePanel extends JPanel implements Runnable {
             g2dGame.drawLine(0, y, gameWidth, y);
         }
 
-        // Draw the player (using logical coordinates).
+        // Draw the player.
         g2dGame.setColor(Color.white);
         g2dGame.fillRect(playerX, playerY, playerSize, playerSize);
 
-        // Optionally, display mouse coordinates.
+        // Optionally, display mouse coordinates in logical space.
         g2dGame.setColor(Color.red);
         g2dGame.drawString("Mouse: (" + inputHandler.mouseX + ", " + inputHandler.mouseY + ")", 10, 20);
 
         g2dGame.dispose();
 
-        // --- Scale the offscreen image to fit the current panel size while preserving aspect ratio ---
+        // --- Scale the offscreen image to completely cover the current panel ---
+        // This scales the image to the panel dimensions regardless of aspect ratio,
+        // ensuring that the fixed grid of 16×12 always fills the window.
         int panelWidth = getWidth();
         int panelHeight = getHeight();
-        double scaleFactor = Math.min((double) panelWidth / gameWidth, (double) panelHeight / gameHeight);
-        int drawWidth = (int) (gameWidth * scaleFactor);
-        int drawHeight = (int) (gameHeight * scaleFactor);
-        int offsetX = (panelWidth - drawWidth) / 2;
-        int offsetY = (panelHeight - drawHeight) / 2;
 
         Graphics2D g2dPanel = (Graphics2D) g;
+        // For smooth scaling.
         g2dPanel.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-        g2dPanel.drawImage(gameImage, offsetX, offsetY, drawWidth, drawHeight, null);
+        g2dPanel.drawImage(gameImage, 0, 0, panelWidth, panelHeight, null);
     }
 }
