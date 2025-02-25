@@ -24,6 +24,20 @@ public class GamePanel extends JPanel implements Runnable {
         this.setDoubleBuffered(true);
         this.setFocusable(true);
         this.requestFocusInWindow();
+
+        // Add Images
+        try {
+            Image A1 = javax.imageio.ImageIO.read(new java.io.File("src/main/resources/A1.png"));
+            tileManager.setTileImage(0, 0, A1); // Sets custom image for tile "A-1"
+
+            Image J8 = javax.imageio.ImageIO.read(new java.io.File("src/main/resources/J8.png"));
+            tileManager.setTileImage(9, 7, J8);  // Sets custom image for tile "J-8"
+
+            Image T15 = javax.imageio.ImageIO.read(new java.io.File("src/main/resources/T15.png"));
+            tileManager.setTileImage(19, 14, T15); // Sets custom image for tile "T-15"
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public void startGameThread() {
