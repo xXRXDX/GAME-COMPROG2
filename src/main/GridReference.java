@@ -2,8 +2,10 @@ package main;
 
 public class GridReference {
 
+    //Commit change
+
     /**
-     * Returns a tile ID like "A-1", "B-1", etc.
+     * Returns a tile ID like "A-1", "-1", etc.
      *
      * @param colIndex zero-based column index
      * @param rowIndex zero-based row index
