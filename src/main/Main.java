@@ -18,10 +18,5 @@ public class Main {
         window.setVisible(true);
 
         gamePanel.startGameThread();
-
-
-
-        //trying out commit function
-        //Still trying stuff out
     }
 }
