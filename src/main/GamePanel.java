@@ -2,54 +2,28 @@ package main;
 
 import javax.swing.JPanel;
 import java.awt.*;
+import java.awt.event.*;
 import java.awt.image.BufferedImage;
 
 public class GamePanel extends JPanel implements Runnable {
 
-    // --- Configurable grid settings ---
-    private int originalTileSize = Constants.ORIGINAL_TILE_SIZE;
-    private int scale = Constants.SCALE;
-    private int tileSize = originalTileSize * scale;
-    private int maxScreenCol = Constants.MAX_SCREEN_COL;
-    private int maxScreenRow = Constants.MAX_SCREEN_ROW;
-    private int gameWidth = maxScreenCol * tileSize;
-    private int gameHeight = maxScreenRow * tileSize;
+    // Change these to any size you want
+    private final int columns = 20;
+    private final int rows = 15;
 
-    // --- FPS ---
-    private final int FPS = Constants.FPS;
+    private final TileManager tileManager = new TileManager(columns, rows);
 
-    // --- Input handler and game thread ---
-    private final InputHandler inputHandler = new InputHandler();
+    // Basic game loop at 60 FPS
+    private final int FPS = 60;
     private Thread gameThread;
 
-    // --- Player properties ---
-    private int playerX = 100, playerY = 100;
-    private final int playerSpeed = 5;
-    private final int playerSize = 48;
-
     public GamePanel() {
-        setPreferredSize(new Dimension(gameWidth, gameHeight));
-        setBackground(Color.black);
-        setDoubleBuffered(true);
-
-        // Register input handlers.
-        addKeyListener(inputHandler);
-        addMouseListener(inputHandler);
-        addMouseMotionListener(inputHandler);
-        setFocusable(true);
-        requestFocusInWindow();
-    }
-
-    /**
-     * Change the base tile size (for example, 64).
-     */
-    public void setOriginalTileSize(int newTileSize) {
-        this.originalTileSize = newTileSize;
-        this.tileSize = originalTileSize * scale;
-        this.gameWidth = maxScreenCol * tileSize;
-        this.gameHeight = maxScreenRow * tileSize;
-        setPreferredSize(new Dimension(gameWidth, gameHeight));
-        revalidate();
+        // Default size; can be anything
+        this.setPreferredSize(new Dimension(800, 600));
+        this.setBackground(Color.black);
+        this.setDoubleBuffered(true);
+        this.setFocusable(true);
+        this.requestFocusInWindow();
     }
 
     public void startGameThread() {
@@ -63,9 +37,11 @@ public class GamePanel extends JPanel implements Runnable {
         double nextDrawTime = System.nanoTime() + drawInterval;
 
         while (gameThread != null) {
-            update();
+            // 1) Update logic (if needed)
+            // 2) Render
             repaint();
 
+            // Basic timing
             try {
                 long sleepTime = (long) ((nextDrawTime - System.nanoTime()) / 1_000_000);
                 if (sleepTime > 0) {
@@ -78,80 +54,46 @@ public class GamePanel extends JPanel implements Runnable {
         }
     }
 
-    private void update() {
-        if (inputHandler.upPressed && playerY > 0) {
-            playerY -= playerSpeed;
-        }
-        if (inputHandler.downPressed && playerY + playerSize < gameHeight) {
-            playerY += playerSpeed;
-        }
-        if (inputHandler.leftPressed && playerX > 0) {
-            playerX -= playerSpeed;
-        }
-        if (inputHandler.rightPressed && playerX + playerSize < gameWidth) {
-            playerX += playerSpeed;
-        }
-    }
-
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 
-        // Create an offscreen image at the fixed logical resolution (gameWidth x gameHeight).
-        BufferedImage gameImage = new BufferedImage(gameWidth, gameHeight, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2dGame = gameImage.createGraphics();
-
-        // 1) --- Render the game scene at the logical resolution ---
-        // Fill background
-        g2dGame.setColor(Color.darkGray);
-        g2dGame.fillRect(0, 0, gameWidth, gameHeight);
-
-        // Draw grid lines
-        g2dGame.setColor(Color.gray);
-        for (int col = 0; col <= maxScreenCol; col++) {
-            int x = col * tileSize;
-            g2dGame.drawLine(x, 0, x, gameHeight);
-        }
-        for (int row = 0; row <= maxScreenRow; row++) {
-            int y = row * tileSize;
-            g2dGame.drawLine(0, y, gameWidth, y);
-        }
-
-        // Draw the player
-        g2dGame.setColor(Color.white);
-        g2dGame.fillRect(playerX, playerY, playerSize, playerSize);
-
-        // Show mouse coordinates
-        g2dGame.setColor(Color.red);
-        g2dGame.drawString("Mouse: (" + inputHandler.mouseX + ", " + inputHandler.mouseY + ")", 10, 20);
-
-        g2dGame.dispose();
-
-        // 2) --- Determine how to draw the image to keep tiles square ---
-        // Get the panel's current size
+        // 1) Determine tile size to keep them square
         int panelWidth = getWidth();
         int panelHeight = getHeight();
 
-        // Calculate the scale factors for width and height
-        double scaleX = (double) panelWidth / (double) gameWidth;
-        double scaleY = (double) panelHeight / (double) gameHeight;
+        int tileSize = Math.min(panelWidth / columns, panelHeight / rows);
 
-        // Use the smaller of the two to preserve aspect ratio (so squares stay squares)
-        double finalScale = Math.min(scaleX, scaleY);
+        // 2) Compute the total rendered grid size
+        int gridWidth = tileSize * columns;
+        int gridHeight = tileSize * rows;
 
-        // Compute the final scaled width and height
-        int scaledWidth = (int) (gameWidth * finalScale);
-        int scaledHeight = (int) (gameHeight * finalScale);
+        // 3) Center the grid in the panel
+        int xOffset = (panelWidth - gridWidth) / 2;
+        int yOffset = (panelHeight - gridHeight) / 2;
 
-        // Center the image (letterbox/pillarbox)
-        int xOffset = (panelWidth - scaledWidth) / 2;
-        int yOffset = (panelHeight - scaledHeight) / 2;
+        // 4) Draw a background for the entire panel
+        Graphics2D g2d = (Graphics2D) g;
+        g2d.setColor(Color.darkGray);
+        g2d.fillRect(0, 0, panelWidth, panelHeight);
 
-        // 3) --- Draw the scaled image ---
-        Graphics2D g2dPanel = (Graphics2D) g;
-        g2dPanel.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-        g2dPanel.drawImage(gameImage, xOffset, yOffset, scaledWidth, scaledHeight, null);
+        // 5) Draw the tiles
+        tileManager.drawTiles(g2d, xOffset, yOffset, tileSize);
+
+        // 6) Optionally, show tile IDs (like "A-1") on each tile
+        g2d.setColor(Color.black);
+        FontMetrics fm = g2d.getFontMetrics();
+        for (int row = 0; row < tileManager.getRows(); row++) {
+            for (int col = 0; col < tileManager.getColumns(); col++) {
+                String id = tileManager.getTile(col, row).getId();
+                int textWidth = fm.stringWidth(id);
+                int textHeight = fm.getAscent();
+
+                // Center the text inside the tile
+                int x = xOffset + col * tileSize + (tileSize - textWidth) / 2;
+                int y = yOffset + row * tileSize + (tileSize + textHeight) / 2;
+                g2d.drawString(id, x, y);
+            }
+        }
     }
-
 }
-

@@ -1,19 +1,14 @@
 package main;
 
-import java.awt.event.*;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 
-public class InputHandler implements KeyListener, MouseListener, MouseMotionListener {
+public class InputHandler implements KeyListener {
 
-    // Keyboard input
     public boolean upPressed, downPressed, leftPressed, rightPressed;
 
-    // Mouse input
-    public int mouseX, mouseY;
-    public boolean leftClick;
-
-    // --- KeyListener methods ---
     @Override
-    public void keyTyped(KeyEvent e) { }
+    public void keyTyped(KeyEvent e) {}
 
     @Override
     public void keyPressed(KeyEvent e) {
@@ -33,45 +28,5 @@ public class InputHandler implements KeyListener, MouseListener, MouseMotionList
             case KeyEvent.VK_A -> leftPressed = false;
             case KeyEvent.VK_D -> rightPressed = false;
         }
-    }
-
-    // --- MouseListener methods ---
-    @Override
-    public void mouseClicked(MouseEvent e) { }
-
-    @Override
-    public void mousePressed(MouseEvent e) {
-        if (e.getButton() == MouseEvent.BUTTON1) {
-            leftClick = true;
-            mouseX = e.getX();
-            mouseY = e.getY();
-            System.out.println("Left click at: (" + mouseX + ", " + mouseY + ")");
-        }
-    }
-
-    @Override
-    public void mouseReleased(MouseEvent e) {
-        if (e.getButton() == MouseEvent.BUTTON1) {
-            leftClick = false;
-        }
-    }
-
-    @Override
-    public void mouseEntered(MouseEvent e) { }
-
-    @Override
-    public void mouseExited(MouseEvent e) { }
-
-    // --- MouseMotionListener methods ---
-    @Override
-    public void mouseDragged(MouseEvent e) {
-        mouseX = e.getX();
-        mouseY = e.getY();
-    }
-
-    @Override
-    public void mouseMoved(MouseEvent e) {
-        mouseX = e.getX();
-        mouseY = e.getY();
     }
 }
