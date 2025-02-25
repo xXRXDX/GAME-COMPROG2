@@ -6,40 +6,50 @@ import java.awt.image.BufferedImage;
 
 public class GamePanel extends JPanel implements Runnable {
 
-    // --- Fixed logical grid settings ---
-    final int originalTileSize = 16;             // Base tile size in pixels
-    final int scale = 3;                         // Scale factor for logical resolution
-    final int tileSize = originalTileSize * scale; // Effective tile size (e.g., 48 pixels)
-    final int maxScreenCol = 16;                 // Fixed number of columns
-    final int maxScreenRow = 12;                 // Fixed number of rows
-    final int gameWidth = tileSize * maxScreenCol; // Logical game width (e.g., 768)
-    final int gameHeight = tileSize * maxScreenRow; // Logical game height (e.g., 576)
+    // --- Configurable grid settings ---
+    private int originalTileSize = Constants.ORIGINAL_TILE_SIZE;
+    private int scale = Constants.SCALE;
+    private int tileSize = originalTileSize * scale;
+    private int maxScreenCol = Constants.MAX_SCREEN_COL;
+    private int maxScreenRow = Constants.MAX_SCREEN_ROW;
+    private int gameWidth = maxScreenCol * tileSize;
+    private int gameHeight = maxScreenRow * tileSize;
 
     // --- FPS ---
-    final int FPS = 60;
+    private final int FPS = Constants.FPS;
 
-    // --- Input handler ---
-    InputHandler inputHandler = new InputHandler();
-    Thread gameThread;
+    // --- Input handler and game thread ---
+    private final InputHandler inputHandler = new InputHandler();
+    private Thread gameThread;
 
-    // --- Player properties (logical coordinates) ---
-    int playerX = 100;
-    int playerY = 100;
-    final int playerSpeed = 5;
-    final int playerSize = 48;
+    // --- Player properties ---
+    private int playerX = 100, playerY = 100;
+    private final int playerSpeed = 5;
+    private final int playerSize = 48;
 
     public GamePanel() {
-        // Set preferred size for initial layout based on logical resolution.
-        this.setPreferredSize(new Dimension(gameWidth, gameHeight));
-        this.setBackground(Color.black);
-        this.setDoubleBuffered(true);
+        setPreferredSize(new Dimension(gameWidth, gameHeight));
+        setBackground(Color.black);
+        setDoubleBuffered(true);
 
         // Register input handlers.
-        this.addKeyListener(inputHandler);
-        this.addMouseListener(inputHandler);
-        this.addMouseMotionListener(inputHandler);
-        this.setFocusable(true);
-        this.requestFocusInWindow();
+        addKeyListener(inputHandler);
+        addMouseListener(inputHandler);
+        addMouseMotionListener(inputHandler);
+        setFocusable(true);
+        requestFocusInWindow();
+    }
+
+    /**
+     * Change the base tile size (for example, 64).
+     */
+    public void setOriginalTileSize(int newTileSize) {
+        this.originalTileSize = newTileSize;
+        this.tileSize = originalTileSize * scale;
+        this.gameWidth = maxScreenCol * tileSize;
+        this.gameHeight = maxScreenRow * tileSize;
+        setPreferredSize(new Dimension(gameWidth, gameHeight));
+        revalidate();
     }
 
     public void startGameThread() {
@@ -49,7 +59,7 @@ public class GamePanel extends JPanel implements Runnable {
 
     @Override
     public void run() {
-        double drawInterval = 1_000_000_000.0 / FPS; // Nanoseconds per frame
+        double drawInterval = 1_000_000_000.0 / FPS;
         double nextDrawTime = System.nanoTime() + drawInterval;
 
         while (gameThread != null) {
@@ -57,9 +67,9 @@ public class GamePanel extends JPanel implements Runnable {
             repaint();
 
             try {
-                double remainingTime = (nextDrawTime - System.nanoTime()) / 1_000_000;
-                if (remainingTime > 0) {
-                    Thread.sleep((long) remainingTime);
+                long sleepTime = (long) ((nextDrawTime - System.nanoTime()) / 1_000_000);
+                if (sleepTime > 0) {
+                    Thread.sleep(sleepTime);
                 }
                 nextDrawTime += drawInterval;
             } catch (InterruptedException e) {
@@ -68,9 +78,7 @@ public class GamePanel extends JPanel implements Runnable {
         }
     }
 
-    // Update game logic using fixed logical resolution boundaries.
-    public void update() {
-        // Keep the player within the fixed grid boundaries.
+    private void update() {
         if (inputHandler.upPressed && playerY > 0) {
             playerY -= playerSpeed;
         }
@@ -86,19 +94,19 @@ public class GamePanel extends JPanel implements Runnable {
     }
 
     @Override
-    public void paintComponent(Graphics g) {
+    protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 
-        // Create an offscreen image at the fixed logical resolution.
+        // Create an offscreen image at the fixed logical resolution (gameWidth x gameHeight).
         BufferedImage gameImage = new BufferedImage(gameWidth, gameHeight, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2dGame = gameImage.createGraphics();
 
-        // --- Render the game scene at logical resolution ---
-        // Fill the background.
+        // 1) --- Render the game scene at the logical resolution ---
+        // Fill background
         g2dGame.setColor(Color.darkGray);
         g2dGame.fillRect(0, 0, gameWidth, gameHeight);
 
-        // Draw grid lines.
+        // Draw grid lines
         g2dGame.setColor(Color.gray);
         for (int col = 0; col <= maxScreenCol; col++) {
             int x = col * tileSize;
@@ -109,25 +117,41 @@ public class GamePanel extends JPanel implements Runnable {
             g2dGame.drawLine(0, y, gameWidth, y);
         }
 
-        // Draw the player.
+        // Draw the player
         g2dGame.setColor(Color.white);
         g2dGame.fillRect(playerX, playerY, playerSize, playerSize);
 
-        // Optionally, display mouse coordinates in logical space.
+        // Show mouse coordinates
         g2dGame.setColor(Color.red);
         g2dGame.drawString("Mouse: (" + inputHandler.mouseX + ", " + inputHandler.mouseY + ")", 10, 20);
 
         g2dGame.dispose();
 
-        // --- Scale the offscreen image to completely cover the current panel ---
-        // This scales the image to the panel dimensions regardless of aspect ratio,
-        // ensuring that the fixed grid of 16×12 always fills the window.
+        // 2) --- Determine how to draw the image to keep tiles square ---
+        // Get the panel's current size
         int panelWidth = getWidth();
         int panelHeight = getHeight();
 
+        // Calculate the scale factors for width and height
+        double scaleX = (double) panelWidth / (double) gameWidth;
+        double scaleY = (double) panelHeight / (double) gameHeight;
+
+        // Use the smaller of the two to preserve aspect ratio (so squares stay squares)
+        double finalScale = Math.min(scaleX, scaleY);
+
+        // Compute the final scaled width and height
+        int scaledWidth = (int) (gameWidth * finalScale);
+        int scaledHeight = (int) (gameHeight * finalScale);
+
+        // Center the image (letterbox/pillarbox)
+        int xOffset = (panelWidth - scaledWidth) / 2;
+        int yOffset = (panelHeight - scaledHeight) / 2;
+
+        // 3) --- Draw the scaled image ---
         Graphics2D g2dPanel = (Graphics2D) g;
-        // For smooth scaling.
         g2dPanel.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-        g2dPanel.drawImage(gameImage, 0, 0, panelWidth, panelHeight, null);
+        g2dPanel.drawImage(gameImage, xOffset, yOffset, scaledWidth, scaledHeight, null);
     }
+
 }
+

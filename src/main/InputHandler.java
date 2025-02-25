@@ -13,55 +13,36 @@ public class InputHandler implements KeyListener, MouseListener, MouseMotionList
 
     // --- KeyListener methods ---
     @Override
-    public void keyTyped(KeyEvent e) {
-    }
+    public void keyTyped(KeyEvent e) { }
 
     @Override
     public void keyPressed(KeyEvent e) {
-        int code = e.getKeyCode();
-        if (code == KeyEvent.VK_W) {
-            upPressed = true;
-        }
-        if (code == KeyEvent.VK_S) {
-            downPressed = true;
-        }
-        if (code == KeyEvent.VK_A) {
-            leftPressed = true;
-        }
-        if (code == KeyEvent.VK_D) {
-            rightPressed = true;
+        switch (e.getKeyCode()) {
+            case KeyEvent.VK_W -> upPressed = true;
+            case KeyEvent.VK_S -> downPressed = true;
+            case KeyEvent.VK_A -> leftPressed = true;
+            case KeyEvent.VK_D -> rightPressed = true;
         }
     }
 
     @Override
     public void keyReleased(KeyEvent e) {
-        int code = e.getKeyCode();
-        if (code == KeyEvent.VK_W) {
-            upPressed = false;
-        }
-        if (code == KeyEvent.VK_S) {
-            downPressed = false;
-        }
-        if (code == KeyEvent.VK_A) {
-            leftPressed = false;
-        }
-        if (code == KeyEvent.VK_D) {
-            rightPressed = false;
+        switch (e.getKeyCode()) {
+            case KeyEvent.VK_W -> upPressed = false;
+            case KeyEvent.VK_S -> downPressed = false;
+            case KeyEvent.VK_A -> leftPressed = false;
+            case KeyEvent.VK_D -> rightPressed = false;
         }
     }
 
     // --- MouseListener methods ---
     @Override
-    public void mouseClicked(MouseEvent e) {
-        // Not used, but you could also process clicks here.
-    }
+    public void mouseClicked(MouseEvent e) { }
 
     @Override
     public void mousePressed(MouseEvent e) {
-        // Detect left mouse button press.
         if (e.getButton() == MouseEvent.BUTTON1) {
             leftClick = true;
-            // Update the mouse position when clicked.
             mouseX = e.getX();
             mouseY = e.getY();
             System.out.println("Left click at: (" + mouseX + ", " + mouseY + ")");
@@ -76,26 +57,20 @@ public class InputHandler implements KeyListener, MouseListener, MouseMotionList
     }
 
     @Override
-    public void mouseEntered(MouseEvent e) {
-        // Optional: Handle mouse entering the component.
-    }
+    public void mouseEntered(MouseEvent e) { }
 
     @Override
-    public void mouseExited(MouseEvent e) {
-        // Optional: Handle mouse exiting the component.
-    }
+    public void mouseExited(MouseEvent e) { }
 
     // --- MouseMotionListener methods ---
     @Override
     public void mouseDragged(MouseEvent e) {
-        // Update the current mouse coordinates while dragging.
         mouseX = e.getX();
         mouseY = e.getY();
     }
 
     @Override
     public void mouseMoved(MouseEvent e) {
-        // Update the current mouse coordinates.
         mouseX = e.getX();
         mouseY = e.getY();
     }

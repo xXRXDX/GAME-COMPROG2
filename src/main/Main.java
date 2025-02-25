@@ -8,11 +8,12 @@ public class Main {
         JFrame window = new JFrame("Star Finding Game");
         window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         window.setResizable(true);
-
-        // Set a default window size, for example, 1280x720.
         window.setSize(new Dimension(1280, 720));
 
         GamePanel gamePanel = new GamePanel();
+        // To test with a different base tile size, uncomment the next line:
+        // gamePanel.setOriginalTileSize(64);
+
         window.add(gamePanel);
         window.setLocationRelativeTo(null);
         window.setVisible(true);
@@ -20,3 +21,4 @@ public class Main {
         gamePanel.startGameThread();
     }
 }
+
